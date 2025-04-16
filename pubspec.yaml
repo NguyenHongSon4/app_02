@@ -68,6 +68,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/images/anh-nen-4k-cho-desktop_105907396.jpg
+    - assets/images/anh-nen-anime-4k-thien-nhien_062607131.jpg
+    - assets/images/anh-nen-cho-may-tinh-4k_105908365.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
