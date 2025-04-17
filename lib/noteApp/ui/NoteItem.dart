@@ -22,7 +22,6 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    // Animation cho giao diện
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -47,7 +46,6 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
         ? Colors.orange
         : Colors.red;
 
-    // Parse màu từ note.color
     Color backgroundColor;
     try {
       backgroundColor = widget.note.color != null
@@ -68,10 +66,7 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
           color: Colors.red,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 16.0),
-          child: const Icon(
-            Icons.delete,
-            color: Colors.white,
-          ),
+          child: const Icon(Icons.delete, color: Colors.white),
         ),
         confirmDismiss: (direction) async {
           return await showDialog(
@@ -98,17 +93,14 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
         },
         child: Card(
           elevation: 5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          clipBehavior: Clip.hardEdge, // Cắt bỏ nội dung vượt quá
           child: InkWell(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => NoteDetailScreen(note: widget.note),
-                ),
+                MaterialPageRoute(builder: (context) => NoteDetailScreen(note: widget.note)),
               );
             },
             borderRadius: BorderRadius.circular(16),
@@ -117,27 +109,20 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    backgroundColor,
-                    backgroundColor.withOpacity(0.7),
-                  ],
+                  colors: [backgroundColor, backgroundColor.withOpacity(0.7)],
                 ),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(8.0), // Giảm padding để tiết kiệm không gian
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Tiêu đề và mức độ ưu tiên
                     Row(
                       children: [
-                        Icon(
-                          Icons.note,
-                          color: isDarkMode ? Colors.white70 : Colors.grey,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
+                        Icon(Icons.note, color: isDarkMode ? Colors.white70 : Colors.grey, size: 20),
+                        const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             widget.note.title,
@@ -149,12 +134,12 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: priorityColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: priorityColor),
                           ),
                           child: Text(
@@ -165,55 +150,47 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
                                 : "Cao",
                             style: TextStyle(
                               color: priorityColor,
-                              fontSize: 12,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     // Nội dung và hình ảnh
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Hình ảnh
                         if (widget.note.imagePath != null)
                           FutureBuilder<bool>(
                             future: File(widget.note.imagePath!).exists(),
                             builder: (context, snapshot) {
                               if (snapshot.connectionState == ConnectionState.waiting) {
                                 return const SizedBox(
-                                  width: 50,
-                                  height: 50,
-                                  child: Center(
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
+                                  width: 40,
+                                  height: 40,
+                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                 );
                               }
                               if (snapshot.hasData && snapshot.data == true) {
                                 return ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                   child: Image.file(
                                     File(widget.note.imagePath!),
-                                    width: 50,
-                                    height: 50,
+                                    width: 40,
+                                    height: 40,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.broken_image,
-                                        size: 50,
-                                        color: Colors.grey,
-                                      );
+                                      return const Icon(Icons.broken_image, size: 40, color: Colors.grey);
                                     },
                                   ),
                                 );
                               }
-                              return const SizedBox(width: 50, height: 50);
+                              return const SizedBox(width: 40, height: 40);
                             },
                           ),
-                        const SizedBox(width: 8),
-                        // Nội dung
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             widget.note.content.length > 50
@@ -228,68 +205,74 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     // Nút chỉnh sửa và xóa
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NoteFormScreen(note: widget.note),
+                        SizedBox(
+                          width: 70, // Giới hạn chiều rộng của nút
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NoteFormScreen(note: widget.note),
+                                ),
+                              );
+                              if (result == true) {
+                                widget.onDelete();
+                              }
+                            },
+                            icon: const Icon(Icons.edit, size: 16),
+                            label: const Text('Sửa', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.withOpacity(0.1),
+                              foregroundColor: Colors.green,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            );
-                            if (result == true) {
-                              widget.onDelete();
-                            }
-                          },
-                          icon: const Icon(Icons.edit, size: 18),
-                          label: const Text('Sửa'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green.withOpacity(0.1),
-                            foregroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            bool? confirm = await showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Xác nhận xóa'),
-                                content: const Text('Bạn có chắc muốn xóa ghi chú này không?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
-                                    child: const Text('Hủy'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, true),
-                                    child: const Text('Xóa', style: TextStyle(color: Colors.red)),
-                                  ),
-                                ],
+                        const SizedBox(width: 6),
+                        SizedBox(
+                          width: 70, // Giới hạn chiều rộng của nút
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              bool? confirm = await showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Xác nhận xóa'),
+                                  content: const Text('Bạn có chắc muốn xóa ghi chú này không?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: const Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                await NoteDatabaseHelper.instance.deleteNote(widget.note.id!);
+                                widget.onDelete();
+                              }
+                            },
+                            icon: const Icon(Icons.delete, size: 16),
+                            label: const Text('Xóa', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.withOpacity(0.1),
+                              foregroundColor: Colors.red,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            );
-                            if (confirm == true) {
-                              await NoteDatabaseHelper.instance.deleteNote(widget.note.id!);
-                              widget.onDelete();
-                            }
-                          },
-                          icon: const Icon(Icons.delete, size: 18),
-                          label: const Text('Xóa'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.withOpacity(0.1),
-                            foregroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
                         ),
                       ],

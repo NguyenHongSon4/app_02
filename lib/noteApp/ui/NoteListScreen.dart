@@ -6,7 +6,7 @@ import "package:app_02/noteApp/ui/NoteItem.dart";
 
 class NoteListScreen extends StatefulWidget {
   final VoidCallback onThemeChanged;
-  final bool isDarkMode; // Giữ lại prop để tránh lỗi biên dịch
+  final bool isDarkMode;
   final Function(BuildContext) onLogout;
 
   const NoteListScreen({
@@ -35,7 +35,6 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
     super.initState();
     _refreshNotes();
 
-    // Animation cho danh sách ghi chú
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -45,7 +44,6 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
     );
     _animationController.forward();
 
-    // Animation cho FAB
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -83,7 +81,6 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    // Lấy trạng thái Dark/Light Mode trực tiếp từ ThemeData
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -243,7 +240,6 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
                   ),
                 );
               } else {
-                // Lọc ghi chú theo từ khóa tìm kiếm
                 final notes = snapshot.data!.where((note) {
                   if (_searchQuery.isEmpty) return true;
                   return note.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -267,9 +263,9 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
                         ? GridView.builder(
                       key: const ValueKey<String>('grid'),
                       padding: const EdgeInsets.all(8),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1,
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 200, // Giới hạn chiều rộng tối đa của mỗi ô
+                        childAspectRatio: 0.7, // Tăng chiều cao của ô
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
                       ),
