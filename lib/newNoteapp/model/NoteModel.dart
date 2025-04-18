@@ -1,9 +1,9 @@
-
 class Note {
   int? id;
   String title;
   String content;
   int priority;
+  int userId; // Thêm trường userId
   DateTime createdAt;
   DateTime modifiedAt;
   List<String>? tags;
@@ -15,6 +15,7 @@ class Note {
     required this.title,
     required this.content,
     required this.priority,
+    required this.userId, // Thêm userId vào constructor
     required this.createdAt,
     required this.modifiedAt,
     this.tags,
@@ -28,6 +29,7 @@ class Note {
       'title': title,
       'content': content,
       'priority': priority,
+      'userId': userId, // Thêm userId vào map
       'createdAt': createdAt.toIso8601String(),
       'modifiedAt': modifiedAt.toIso8601String(),
       'tags': tags?.join(','), // Chuyển List<String> thành chuỗi
@@ -38,10 +40,11 @@ class Note {
 
   factory Note.fromMap(Map<String, dynamic> map) {
     return Note(
-      id: map['id'] is String ? int.parse(map['id']) : map['id'], // JSON Server trả về id dưới dạng số
+      id: map['id'] is String ? int.parse(map['id']) : map['id'],
       title: map['title'],
       content: map['content'],
       priority: map['priority'] is String ? int.parse(map['priority']) : map['priority'],
+      userId: map['userId'] is String ? int.parse(map['userId']) : map['userId'], // Thêm userId
       createdAt: DateTime.parse(map['createdAt']),
       modifiedAt: DateTime.parse(map['modifiedAt']),
       tags: map['tags'] != null ? (map['tags'] as String).split(',') : null,
@@ -55,6 +58,7 @@ class Note {
     String? title,
     String? content,
     int? priority,
+    int? userId, // Thêm userId vào copyWith
     DateTime? createdAt,
     DateTime? modifiedAt,
     List<String>? tags,
@@ -66,6 +70,7 @@ class Note {
       title: title ?? this.title,
       content: content ?? this.content,
       priority: priority ?? this.priority,
+      userId: userId ?? this.userId, // Cập nhật userId
       createdAt: createdAt ?? this.createdAt,
       modifiedAt: modifiedAt ?? this.modifiedAt,
       tags: tags ?? this.tags,
@@ -76,6 +81,6 @@ class Note {
 
   @override
   String toString() {
-    return 'Note(id: $id, title: $title, priority: $priority, imagePath: $imagePath)';
+    return 'Note(id: $id, title: $title, priority: $priority, userId: $userId, imagePath: $imagePath)';
   }
 }

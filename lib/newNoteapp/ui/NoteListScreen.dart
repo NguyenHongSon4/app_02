@@ -3,6 +3,7 @@ import 'package:app_02/newNoteapp/model/NoteModel.dart';
 import 'package:app_02/newNoteapp/db/NoteDatabaseHelper.dart';
 import 'package:app_02/newNoteapp/ui/NoteForm.dart';
 import 'package:app_02/newNoteapp/ui/NoteItem.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NoteListScreen extends StatefulWidget {
   final VoidCallback onThemeChanged;
@@ -29,10 +30,12 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
   late Animation<double> _fadeAnimation;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  int? _userId;
 
   @override
   void initState() {
     super.initState();
+    _loadUserId();
     _refreshNotes();
 
     _animationController = AnimationController(
@@ -53,6 +56,14 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
     );
   }
 
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userId = prefs.getInt('userId');
+    });
+    _refreshNotes();
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -61,8 +72,14 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
   }
 
   Future<void> _refreshNotes() async {
+    if (_userId == null) {
+      setState(() {
+        _notesFuture = Future.value([]);
+      });
+      return;
+    }
     setState(() {
-      _notesFuture = NoteDatabaseHelper.instance.getAllNotes();
+      _notesFuture = NoteDatabaseHelper.instance.getNotesByUserId(_userId!);
     });
   }
 

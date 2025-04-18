@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart'; // Thư viện để chia sẻ
-import "package:app_02/newNoteapp/model/NoteModel.dart";
+import 'package:share_plus/share_plus.dart';
+import 'package:app_02/newNoteapp/model/NoteModel.dart';
+import 'package:app_02/newNoteapp/db/NoteAccountDatabaseHelper.dart';
 
 class NoteDetailScreen extends StatefulWidget {
   final Note note;
@@ -15,6 +16,7 @@ class NoteDetailScreen extends StatefulWidget {
 class _NoteDetailScreenState extends State<NoteDetailScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  String? _username;
 
   @override
   void initState() {
@@ -28,6 +30,16 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> with SingleTickerPr
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
+
+    // Lấy username từ userId
+    _loadUsername();
+  }
+
+  Future<void> _loadUsername() async {
+    final account = await NoteAccountDatabaseHelper.instance.getAccountByUserId(widget.note.userId);
+    setState(() {
+      _username = account?.username ?? 'Không xác định';
+    });
   }
 
   @override
@@ -41,6 +53,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> with SingleTickerPr
     final String shareText = '''
 Tiêu đề: ${widget.note.title}
 Nội dung: ${widget.note.content}
+Người tạo: $_username
 Ưu tiên: ${widget.note.priority == 1 ? "Thấp" : widget.note.priority == 2 ? "Trung bình" : "Cao"}
 Thời gian tạo: ${widget.note.createdAt}
 Thời gian sửa: ${widget.note.modifiedAt}
@@ -54,7 +67,7 @@ Nhãn: ${widget.note.tags?.join(', ') ?? 'Không có nhãn'}
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      extendBodyBehindAppBar: true, // Cho phép nền kéo dài lên AppBar
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(widget.note.title),
         backgroundColor: Colors.transparent,
@@ -109,6 +122,14 @@ Nhãn: ${widget.note.tags?.join(', ') ?? 'Không có nhãn'}
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Người tạo
+                            _buildInfoRow(
+                              icon: Icons.person,
+                              label: 'Người tạo',
+                              value: _username ?? 'Đang tải...',
+                              context: context,
+                            ),
+                            const SizedBox(height: 16),
                             // Nội dung
                             _buildInfoRow(
                               icon: Icons.description,

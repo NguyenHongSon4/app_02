@@ -20,8 +20,9 @@ class NoteDatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
   }
 
@@ -32,6 +33,7 @@ CREATE TABLE notes (
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   priority INTEGER NOT NULL,
+  userId INTEGER NOT NULL,
   createdAt TEXT NOT NULL,
   modifiedAt TEXT NOT NULL,
   tags TEXT,
@@ -41,9 +43,29 @@ CREATE TABLE notes (
 ''');
   }
 
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE notes ADD COLUMN userId INTEGER NOT NULL DEFAULT 1');
+        print('Added userId column to notes table');
+      } catch (e) {
+        print('Error adding userId column: $e (possibly already exists)');
+      }
+    }
+    if (oldVersion < 3) {
+      print('Upgraded to version 3');
+    }
+  }
+
   Future<List<Note>> getAllNotes() async {
     final db = await database;
     final result = await db.query('notes');
+    return result.map((map) => Note.fromMap(map)).toList();
+  }
+
+  Future<List<Note>> getNotesByUserId(int userId) async {
+    final db = await database;
+    final result = await db.query('notes', where: 'userId = ?', whereArgs: [userId]);
     return result.map((map) => Note.fromMap(map)).toList();
   }
 

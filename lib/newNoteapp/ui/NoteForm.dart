@@ -6,6 +6,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NoteFormScreen extends StatefulWidget {
   final Note? note;
@@ -22,6 +23,7 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
   late String _title;
   late String _content;
   late int _priority;
+  late int _userId; // Thêm userId
   List<String> _tags = [];
   String? _color;
   Color _selectedColor = Colors.white;
@@ -39,9 +41,13 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
     _title = widget.note?.title ?? '';
     _content = widget.note?.content ?? '';
     _priority = widget.note?.priority ?? 1;
+    _userId = widget.note?.userId ?? 1; // Mặc định userId = 1 nếu không có
     _tags = widget.note?.tags ?? [];
     _color = widget.note?.color;
     _imagePath = widget.note?.imagePath;
+
+    // Lấy userId từ SharedPreferences
+    _getUserId();
 
     // Handle initial color
     if (_color != null) {
@@ -69,6 +75,13 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
+  }
+
+  Future<void> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userId = prefs.getInt('userId') ?? 1; // Mặc định userId = 1 nếu không tìm thấy
+    });
   }
 
   @override
@@ -603,6 +616,7 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                                 title: _title,
                                 content: _content,
                                 priority: _priority,
+                                userId: _userId, // Lưu userId
                                 createdAt: widget.note?.createdAt ?? now,
                                 modifiedAt: now,
                                 tags: _tags.isNotEmpty ? _tags : null,
