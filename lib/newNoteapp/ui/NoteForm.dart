@@ -6,7 +6,6 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:platform/platform.dart' as platform;
 
 class NoteFormScreen extends StatefulWidget {
   final Note? note;
@@ -36,7 +35,7 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    // Khởi tạo giá trị từ note (nếu có)
+    // Initialize values from note (if provided)
     _title = widget.note?.title ?? '';
     _content = widget.note?.content ?? '';
     _priority = widget.note?.priority ?? 1;
@@ -44,7 +43,7 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
     _color = widget.note?.color;
     _imagePath = widget.note?.imagePath;
 
-    // Xử lý màu sắc ban đầu
+    // Handle initial color
     if (_color != null) {
       try {
         String hexColor = _color!.replaceFirst('#', '');
@@ -56,12 +55,12 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
       }
     }
 
-    // Kiểm tra ảnh ban đầu
+    // Check if initial image exists
     if (_imagePath != null && File(_imagePath!).existsSync()) {
       _imageFile = File(_imagePath!);
     }
 
-    // Khởi tạo animation
+    // Initialize animation
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -114,7 +113,7 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
             onColorChanged: (Color newColor) {
               setState(() {
                 _selectedColor = newColor;
-                _color = newColor.value.toRadixString(16).substring(2, 8); // Lưu hex 6 chữ số
+                _color = newColor.value.toRadixString(16).substring(2, 8);
               });
             },
           ),
@@ -131,8 +130,10 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
 
   Future<bool> _requestCameraPermission() async {
     var status = await Permission.camera.status;
+    print('Camera permission status: $status');
     if (!status.isGranted) {
       status = await Permission.camera.request();
+      print('Camera permission after request: $status');
     }
     if (status.isPermanentlyDenied) {
       _scaffoldMessengerKey.currentState?.showSnackBar(
@@ -151,18 +152,26 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
     return status.isGranted;
   }
 
-  Future<bool> _requestStoragePermission() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.photos,
-      if (Platform.isAndroid) Permission.storage,
-    ].request();
+  Future<bool> _requestPhotosPermission() async {
+    // Try photos permission first (iOS and Android 13+)
+    var status = await Permission.photos.status;
+    print('Photos permission status: $status');
+    if (!status.isGranted) {
+      status = await Permission.photos.request();
+      print('Photos permission after request: $status');
+    }
 
-    bool isGranted = statuses[Permission.photos]!.isGranted ||
-        (Platform.isAndroid && statuses[Permission.storage]?.isGranted == true);
+    // Fallback to storage permission for older Android versions (API < 33)
+    if (!status.isGranted && Platform.isAndroid) {
+      status = await Permission.storage.status;
+      print('Storage permission status: $status');
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
+        print('Storage permission after request: $status');
+      }
+    }
 
-    if (!isGranted &&
-        (statuses[Permission.photos]!.isPermanentlyDenied ||
-            (Platform.isAndroid && statuses[Permission.storage]?.isPermanentlyDenied == true))) {
+    if (status.isPermanentlyDenied) {
       _scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
           content: const Text('Quyền truy cập ảnh bị từ chối. Vui lòng cấp quyền trong cài đặt.'),
@@ -176,22 +185,21 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
       );
       return false;
     }
-
-    return isGranted;
+    return status.isGranted;
   }
 
   Future<void> _deleteOldImage() async {
     if (_imagePath != null && await File(_imagePath!).exists()) {
       await File(_imagePath!).delete();
-      print('Đã xóa ảnh cũ: $_imagePath');
+      print('Deleted old image: $_imagePath');
     }
   }
 
   Future<void> _takePhoto(BuildContext context) async {
     if (!await _requestCameraPermission()) {
       _scaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(
-          content: const Text('Cần quyền camera để chụp ảnh'),
+        const SnackBar(
+          content: Text('Cần quyền camera để chụp ảnh'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -200,19 +208,27 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
     }
 
     try {
-      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+      print('Picked photo: $photo');
       if (photo != null) {
         await _deleteOldImage();
         final directory = await getApplicationDocumentsDirectory();
         final imageName = 'note_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final newImagePath = '${directory.path}/$imageName';
         final File newImage = await File(photo.path).copy(newImagePath);
+        print('Photo saved to: $newImagePath');
         setState(() {
           _imageFile = newImage;
           _imagePath = newImagePath;
         });
+      } else {
+        print('No photo taken');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Error in _takePhoto: $e\n$stackTrace');
       _scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text('Lỗi khi chụp ảnh: $e'),
@@ -224,10 +240,10 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
   }
 
   Future<void> _pickImage(BuildContext context) async {
-    if (!await _requestStoragePermission()) {
+    if (!await _requestPhotosPermission()) {
       _scaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(
-          content: const Text('Cần quyền truy cập ảnh để chọn ảnh'),
+        const SnackBar(
+          content: Text('Cần quyền truy cập ảnh để chọn ảnh'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -236,19 +252,50 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
     }
 
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      // Try pickImage first
+      XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      print('Picked image (pickImage): $image');
+
+      // Fallback to pickMedia if pickImage fails
+      if (image == null) {
+        print('Falling back to pickMedia');
+        image = await _picker.pickMedia();
+        print('Picked media (pickMedia): $image');
+      }
+
       if (image != null) {
         await _deleteOldImage();
         final directory = await getApplicationDocumentsDirectory();
         final imageName = 'note_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final newImagePath = '${directory.path}/$imageName';
         final File newImage = await File(image.path).copy(newImagePath);
+        print('Image saved to: $newImagePath');
         setState(() {
           _imageFile = newImage;
           _imagePath = newImagePath;
         });
+        _scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Đã chọn ảnh từ thư viện'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        print('No image selected from gallery');
+        _scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Không có ảnh nào được chọn'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Error in _pickImage: $e\n$stackTrace');
       _scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text('Lỗi khi chọn ảnh: $e'),
@@ -344,7 +391,6 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                   opacity: _fadeAnimation,
                   child: Column(
                     children: [
-                      // Card cho tiêu đề, nội dung, ưu tiên
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -411,7 +457,6 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Card cho nhãn
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -462,7 +507,6 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Card cho màu
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -488,7 +532,6 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Nút thêm ảnh
                       ElevatedButton.icon(
                         onPressed: () => _showImagePickerDialog(context),
                         icon: const Icon(Icons.image),
@@ -541,13 +584,11 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                         ),
                       ],
                       const SizedBox(height: 16),
-                      // Nút lưu
                       ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
                             try {
-                              // Chuẩn hóa dữ liệu
                               String? validatedColor = _color;
                               if (validatedColor != null && validatedColor.length != 6) {
                                 validatedColor = null;
