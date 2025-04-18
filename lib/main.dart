@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:app_02/noteApp/ui/LoginScreen.dart';
-import 'package:app_02/noteApp/ui/NoteListScreen.dart';
+import 'package:app_02/newNoteapp/ui/LoginScreen.dart';
+import 'package:app_02/newNoteapp/ui/NoteListScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,16 +25,24 @@ class _MyAppState extends State<MyApp> {
 
   // Tải trạng thái chủ đề từ SharedPreferences
   Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+      });
+    } catch (e) {
+      debugPrint('Lỗi khi tải chủ đề: $e');
+    }
   }
 
   // Lưu trạng thái chủ đề vào SharedPreferences
   Future<void> _saveTheme(bool isDarkMode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', isDarkMode);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isDarkMode', isDarkMode);
+    } catch (e) {
+      debugPrint('Lỗi khi lưu chủ đề: $e');
+    }
   }
 
   // Chuyển đổi giữa chế độ sáng và tối
@@ -67,26 +75,32 @@ class _MyAppState extends State<MyApp> {
 
     if (confirm != true) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    print("Before logout - isLoggedIn: ${prefs.getBool('isLoggedIn')}");
-    await prefs.clear();
-    print("After logout - isLoggedIn: ${prefs.getBool('isLoggedIn') ?? false}");
-    print("All keys after logout: ${prefs.getKeys()}");
-
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => LoginScreen(
-            onThemeChanged: _toggleTheme,
-            isDarkMode: _isDarkMode,
-            onLogout: _logout,
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => LoginScreen(
+              onThemeChanged: _toggleTheme,
+              isDarkMode: _isDarkMode,
+              onLogout: _logout,
+            ),
           ),
-        ),
-            (Route<dynamic> route) => false,
-      );
+              (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Lỗi khi đăng xuất: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi đăng xuất: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-
-    print("Đăng xuất thành công");
   }
 
   @override
@@ -155,7 +169,8 @@ class AuthCheckWidget extends StatelessWidget {
           );
         }
 
-        if (!snapshot.hasData) {
+        if (snapshot.hasError || !snapshot.hasData) {
+          debugPrint('Lỗi khi tải SharedPreferences: ${snapshot.error}');
           return LoginScreen(
             onThemeChanged: onThemeChanged,
             isDarkMode: isDarkMode,
@@ -165,23 +180,18 @@ class AuthCheckWidget extends StatelessWidget {
 
         final prefs = snapshot.data!;
         final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-        print("App start - isLoggedIn: $isLoggedIn");
 
-        if (isLoggedIn) {
-          print("User is logged in");
-          return NoteListScreen(
-            onThemeChanged: onThemeChanged,
-            isDarkMode: isDarkMode,
-            onLogout: onLogout,
-          );
-        } else {
-          print("User is not logged in");
-          return LoginScreen(
-            onThemeChanged: onThemeChanged,
-            isDarkMode: isDarkMode,
-            onLogout: onLogout,
-          );
-        }
+        return isLoggedIn
+            ? NoteListScreen(
+          onThemeChanged: onThemeChanged,
+          isDarkMode: isDarkMode,
+          onLogout: onLogout,
+        )
+            : LoginScreen(
+          onThemeChanged: onThemeChanged,
+          isDarkMode: isDarkMode,
+          onLogout: onLogout,
+        );
       },
     );
   }
