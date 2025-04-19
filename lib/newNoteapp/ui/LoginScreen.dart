@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           color: Theme.of(context).primaryColor.withOpacity(0.2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.white.withOpacity(0.1),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
