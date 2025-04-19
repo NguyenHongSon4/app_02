@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../db/NoteAccountDatabaseHelper.dart';
 import 'NoteListScreen.dart';
-import 'RegisterScreen.dart';
+import 'package:app_02/newNoteapp/model/NoteAccount.dart';
 
-class LoginScreen extends StatefulWidget {
+class RegisterScreen extends StatefulWidget {
   final VoidCallback onThemeChanged;
   final bool isDarkMode;
   final Function(BuildContext) onLogout;
 
-  const LoginScreen({
+  const RegisterScreen({
     super.key,
     required this.onThemeChanged,
     required this.isDarkMode,
@@ -17,15 +17,17 @@ class LoginScreen extends StatefulWidget {
   });
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _RegisterScreenState createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -50,80 +52,81 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _animationController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
-        final account = await NoteAccountDatabaseHelper.instance.login(
-          _usernameController.text,
-          _passwordController.text,
+        final username = _usernameController.text.trim();
+        final password = _passwordController.text;
+
+        // Kiểm tra xem username đã tồn tại chưa
+        final usernameExists = await NoteAccountDatabaseHelper.instance.isUsernameExists(username);
+        if (usernameExists) {
+          _showErrorSnackBar('Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.');
+          return;
+        }
+
+        // Tạo userId mới (dựa trên số lượng tài khoản hiện tại)
+        final accountCount = await NoteAccountDatabaseHelper.instance.countAccounts();
+        final newUserId = accountCount + 1;
+
+        // Tạo tài khoản mới
+        final now = DateTime.now().toIso8601String();
+        final newAccount = NoteAccount(
+          userId: newUserId,
+          username: username,
+          password: password,
+          status: 'active',
+          lastLogin: now,
+          createdAt: now,
         );
 
-        if (account != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setInt('userId', account.userId);
-          await prefs.setInt('accountId', account.id!);
-          await prefs.setString('username', account.username);
-          await prefs.setBool('isLoggedIn', true);
+        final createdAccount = await NoteAccountDatabaseHelper.instance.createAccount(newAccount);
 
-          if (mounted) {
-            Navigator.of(context).pushReplacement(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => NoteListScreen(
-                  onThemeChanged: widget.onThemeChanged,
-                  isDarkMode: widget.isDarkMode,
-                  onLogout: widget.onLogout,
-                ),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  const begin = 0.0;
-                  const end = 1.0;
-                  const curve = Curves.easeInOut;
-                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                  var opacityAnimation = animation.drive(tween);
-                  return FadeTransition(
-                    opacity: opacityAnimation,
-                    child: child,
-                  );
-                },
-                transitionDuration: const Duration(milliseconds: 600),
+        // Lưu thông tin vào SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('userId', createdAccount.userId);
+        await prefs.setInt('accountId', createdAccount.id!);
+        await prefs.setString('username', createdAccount.username);
+        await prefs.setBool('isLoggedIn', true);
+
+        if (mounted) {
+          // Chuyển hướng đến NoteListScreen
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => NoteListScreen(
+                onThemeChanged: widget.onThemeChanged,
+                isDarkMode: widget.isDarkMode,
+                onLogout: widget.onLogout,
               ),
-            );
-          }
-        } else {
-          _showErrorSnackBar('Tên đăng nhập hoặc mật khẩu không đúng.');
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                const begin = 0.0;
+                const end = 1.0;
+                const curve = Curves.easeInOut;
+                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                var opacityAnimation = animation.drive(tween);
+                return FadeTransition(
+                  opacity: opacityAnimation,
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 600),
+            ),
+          );
         }
       } catch (e) {
-        _showErrorSnackBar('Lỗi đăng nhập: $e');
+        _showErrorSnackBar('Lỗi khi đăng ký: $e');
       } finally {
         if (mounted) {
           setState(() => _isLoading = false);
         }
       }
-    }
-  }
-
-  Future<void> _logout(BuildContext context) async {
-    if (!mounted) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => LoginScreen(
-            onThemeChanged: widget.onThemeChanged,
-            isDarkMode: widget.isDarkMode,
-            onLogout: widget.onLogout,
-          ),
-        ),
-            (Route<dynamic> route) => false,
-      );
     }
   }
 
@@ -151,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đăng nhập'),
+        title: const Text('Đăng ký'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -206,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ],
                         ),
                         child: Icon(
-                          Icons.note_alt,
+                          Icons.person_add,
                           size: 90,
                           color: Theme.of(context).primaryColor,
                         ),
@@ -214,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Chào mừng đến với NoteApp',
+                      'Tạo tài khoản mới',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -282,6 +285,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   if (value == null || value.isEmpty) {
                                     return 'Vui lòng nhập tên đăng nhập';
                                   }
+                                  if (value.length < 3) {
+                                    return 'Tên đăng nhập phải có ít nhất 3 ký tự';
+                                  }
                                   return null;
                                 },
                               ),
@@ -338,12 +344,74 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   if (value == null || value.isEmpty) {
                                     return 'Vui lòng nhập mật khẩu';
                                   }
+                                  if (value.length < 6) {
+                                    return 'Mật khẩu phải có ít nhất 6 ký tự';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _confirmPasswordController,
+                                obscureText: _obscureConfirmPassword,
+                                decoration: InputDecoration(
+                                  labelText: 'Xác nhận mật khẩu',
+                                  prefixIcon: Icon(
+                                    Icons.lock,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                                      });
+                                    },
+                                  ),
+                                  filled: true,
+                                  fillColor: widget.isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: widget.isDarkMode ? Colors.grey[600]! : Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: Theme.of(context).primaryColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Vui lòng xác nhận mật khẩu';
+                                  }
+                                  if (value != _passwordController.text) {
+                                    return 'Mật khẩu xác nhận không khớp';
+                                  }
                                   return null;
                                 },
                               ),
                               const SizedBox(height: 24),
                               ElevatedButton(
-                                onPressed: _isLoading ? null : _login,
+                                onPressed: _isLoading ? null : _register,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
                                   shape: RoundedRectangleBorder(
@@ -364,7 +432,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   ),
                                 )
                                     : const Text(
-                                  'ĐĂNG NHẬP',
+                                  'ĐĂNG KÝ',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -378,43 +446,19 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            // TODO: Xử lý quên mật khẩu
-                          },
-                          child: Text(
-                            'Quên mật khẩu?',
-                            style: TextStyle(
-                              color: widget.isDarkMode ? Colors.blue[300] : Colors.blue,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(
+                          'Đã có tài khoản? Đăng nhập',
+                          style: TextStyle(
+                            color: widget.isDarkMode ? Colors.blue[300] : Colors.blue,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => RegisterScreen(
-                                  onThemeChanged: widget.onThemeChanged,
-                                  isDarkMode: widget.isDarkMode,
-                                  onLogout: widget.onLogout,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Đăng ký',
-                            style: TextStyle(
-                              color: widget.isDarkMode ? Colors.blue[300] : Colors.blue,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),

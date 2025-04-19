@@ -129,8 +129,8 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.orange.withOpacity(0.8),
-                Colors.yellow.withOpacity(0.3),
+                Colors.blue.withOpacity(0.8),
+                Colors.blueGrey.withOpacity(0.3),
               ],
             ),
             borderRadius: const BorderRadius.only(
