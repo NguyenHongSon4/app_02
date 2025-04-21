@@ -8,7 +8,7 @@ void main() {
   nv.hienThiThongTin();
 
   // Test nhân viên bán hàng
-  NhanVienBanHang nv_BH = NhanVienBanHang('NV002', 'Phạm Thị B', 5000000, 100000000, 0.02);
+  NhanVienBanHang nvBh = NhanVienBanHang('NV002', 'Phạm Thị B', 5000000, 100000000, 0.02);
   print('\nThông tin nhân viên bán hàng:');
-  nv_BH.hienThiThongTin();
+  nvBh.hienThiThongTin();
 }

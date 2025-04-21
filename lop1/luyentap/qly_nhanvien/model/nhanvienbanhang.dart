@@ -4,11 +4,11 @@ class NhanVienBanHang extends Nhanvien {
   double _doanhSo;
   double _hoaHong;
 
-  NhanVienBanHang(String maNV, 
-                  String hoTen, 
-                  double luongCoBan, 
+  NhanVienBanHang(super.maNV, 
+                  super.hoTen, 
+                  super.luongCoBan, 
                   this._doanhSo,
-                  this._hoaHong): super(maNV, hoTen, luongCoBan);
+                  this._hoaHong);
 
   // Getters
   double get doanhSo => _doanhSo;

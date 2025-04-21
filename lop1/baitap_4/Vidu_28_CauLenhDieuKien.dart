@@ -2,17 +2,13 @@ void main()
 {
  int x = 100;
 
-  if(x is! int)
-  {
-    print("Day khong la 1 con so nguyen");
-  }
-  else if(x%2==0)
-  {
-    print("Day la so chan"); 
-  }
-  else{
-    print("Day la so le");
-  }
+  if(x%2==0)
+{
+  print("Day la so chan"); 
+}
+else{
+  print("Day la so le");
+}
 
   int thang = 3;
   switch(thang)

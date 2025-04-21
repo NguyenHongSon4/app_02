@@ -48,13 +48,13 @@ void main()
   //7.Cắt & nối
   var subList = list4.sublist(1,3); //cắt 1 sublist từ 1 đến <3
   print(subList);
-  var str_joined = list4.join(",");
-  print(str_joined);
+  var strJoined = list4.join(",");
+  print(strJoined);
 
   //8.Duyệt các phần tử
-  list4.forEach((element){
+  for (var element in list4) {
     print(element);
-  });
+  }
 
 
 }

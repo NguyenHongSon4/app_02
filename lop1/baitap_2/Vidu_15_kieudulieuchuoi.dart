@@ -15,7 +15,7 @@ void main()
   var s7 = r'Day la 1 doan \n van ban';
   print(s7);
 
-  var s8 = "Chuoi 1" + "Chuoi 2";
+  var s8 = "Chuoi 1" "Chuoi 2";
   print(s8);
 
   var s9 = 'Chuoi '

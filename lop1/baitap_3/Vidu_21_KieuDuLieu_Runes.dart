@@ -34,9 +34,9 @@ void main(){
   
   // Duyệt qua từng điểm mã
   runes1 = 'Xin chào 😀, tôi rất ♥ bạn!'.runes;
-  runes1.forEach((int rune) {
+  for (var rune in runes1) {
     print('Unicode: $rune, Ký tự: ${String.fromCharCode(rune)}');
-  });
+  }
   
   // Kiểm tra
   print(runes1.isEmpty);          // Kiểm tra rỗng

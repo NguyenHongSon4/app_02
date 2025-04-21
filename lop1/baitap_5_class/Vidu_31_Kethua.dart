@@ -15,7 +15,7 @@ class Tablet extends Product{
   double height = 0;
  
   Tablet(this.width, this.height, double price): super(price, quantity: 1){
-    this.name = "Ipad Pro";
+    name = "Ipad Pro";
   }
  
   @override

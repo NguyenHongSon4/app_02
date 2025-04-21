@@ -37,7 +37,7 @@ class Point3 {
   double? x = X_; // Co the truy cao khai khong phu thuoc this
   //double? y = this.x; //LOI
   double? y;
-  late double? z = this.x;
+  late double? z = x;
  
   Point3(this.x, this.y, this.z);
 }

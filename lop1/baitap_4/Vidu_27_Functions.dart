@@ -35,7 +35,7 @@ condition ? expr1 : expr2
 // Hàm với tên của tham số
 // Khi gọi 1 hàm (function), ta có truyền giá trị thông qua tên biến paramName: value,
 String createFullName({String ho="Nguyen", String chuLot="Vab", String ten="A"}){
-  return ho+" "+chuLot+" "+ten;
+  return "$ho $chuLot $ten";
 }
  
  
@@ -101,11 +101,11 @@ void main(){
   print(sum(10, 1, 2));
   print(sum(10, 1, 2, 3));
  
-  var ham = (var a, var b){
+  ham(var a, var b){
     return a+b;
-  };
+  }
  
-  var ham2 = (var a, var b)=>a+b;
+  ham2(var a, var b)=>a+b;
  
   print(ham(1,2));
 }

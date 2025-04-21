@@ -9,7 +9,7 @@ void main()
     String? input= stdin.readLineSync();
     if(input != null)
     {
-       a = double.tryParse(input!) ?? 0; //co bat loi
+       a = double.tryParse(input) ?? 0; //co bat loi
     }
   }while(a==0);
 
@@ -19,7 +19,7 @@ void main()
     String? input= stdin.readLineSync();
     if(input != null)
     {
-       b = double.tryParse(input!) ?? 0; //co bat loi
+       b = double.tryParse(input) ?? 0; //co bat loi
     }
   }while(b==0);
 
@@ -29,7 +29,7 @@ void main()
     String? input= stdin.readLineSync();
     if(input != null)
     {
-       c = double.tryParse(input!) ?? 0; //co bat loi
+       c = double.tryParse(input) ?? 0; //co bat loi
     }
   }while(c==0);
 

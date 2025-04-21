@@ -2,7 +2,7 @@ import 'sinhvien.dart';
 
 class LopHoc {
   String _tenLop;
-  List<SinhVien> _danhSachSV = [];
+  final List<SinhVien> _danhSachSV = [];
 
   LopHoc(this._tenLop);
 

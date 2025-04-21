@@ -383,7 +383,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       children: [
                         TextButton(
                           onPressed: () {
-                            // TODO: Xử lý quên mật khẩu
                           },
                           child: Text(
                             'Quên mật khẩu?',
