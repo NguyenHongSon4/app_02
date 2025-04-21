@@ -746,5 +746,6 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
         ),
       ),
     );
+
   }
 }

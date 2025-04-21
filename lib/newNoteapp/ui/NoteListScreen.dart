@@ -176,7 +176,7 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
           ),
         )
             : const Text(
-          'Ghi Chú Của Bạn',
+          'Ghi Chú',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,

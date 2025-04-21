@@ -203,6 +203,28 @@ class _NoteItemState extends State<NoteItem> with SingleTickerProviderStateMixin
                         ),
                       ],
                     ),
+                    // Thêm phần hiển thị tags nếu có
+                    if (widget.note.tags != null && widget.note.tags!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: widget.note.tags!
+                            .map((tag) => Chip(
+                          label: Text(
+                            tag,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDarkMode ? Colors.white70 : Colors.black87,
+                            ),
+                          ),
+                          backgroundColor: priorityColor.withOpacity(0.1),
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                          labelPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                        ))
+                            .toList(),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
