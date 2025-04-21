@@ -31,6 +31,9 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   int? _userId;
+  String _sortOption = 'date'; // Mặc định sắp xếp theo ngày
+  int? _priorityFilter; // Lọc theo ưu tiên (null = không lọc, 1 = Thấp, 2 = Trung bình, 3 = Cao)
+  String _tagFilter = ''; // Lọc theo nhãn
 
   @override
   void initState() {
@@ -87,6 +90,8 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
     setState(() {
       _isSearching = !_isSearching;
       _searchQuery = '';
+      _priorityFilter = null;
+      _tagFilter = '';
     });
   }
 
@@ -94,6 +99,59 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
     setState(() {
       _searchQuery = query;
     });
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Lọc ghi chú'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Lọc theo ưu tiên
+              const Text('Ưu tiên:', style: TextStyle(fontWeight: FontWeight.bold)),
+              DropdownButton<int?>(
+                value: _priorityFilter,
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Tất cả')),
+                  DropdownMenuItem(value: 1, child: Text('Thấp')),
+                  DropdownMenuItem(value: 2, child: Text('Trung bình')),
+                  DropdownMenuItem(value: 3, child: Text('Cao')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _priorityFilter = value;
+                  });
+                  Navigator.of(ctx).pop();
+                },
+              ),
+              const SizedBox(height: 16),
+              // Lọc theo nhãn
+              const Text('Nhãn:', style: TextStyle(fontWeight: FontWeight.bold)),
+              TextField(
+                onChanged: (value) {
+                  setState(() {
+                    _tagFilter = value;
+                  });
+                },
+                decoration: const InputDecoration(
+                  hintText: 'Nhập nhãn (rỗng để bỏ lọc)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -159,6 +217,15 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
             onPressed: _toggleSearch,
             tooltip: _isSearching ? 'Hủy tìm kiếm' : 'Tìm kiếm ghi chú',
           ),
+          if (_isSearching)
+            IconButton(
+              icon: Icon(
+                Icons.filter_list,
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+              onPressed: _showFilterDialog,
+              tooltip: 'Lọc ghi chú',
+            ),
           IconButton(
             icon: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
@@ -195,9 +262,37 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
             onSelected: (value) {
               if (value == 'logout') {
                 _showLogoutDialog();
+              } else if (value == 'sort_date') {
+                setState(() {
+                  _sortOption = 'date';
+                });
+              } else if (value == 'sort_priority') {
+                setState(() {
+                  _sortOption = 'priority';
+                });
               }
             },
             itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'sort_date',
+                child: Row(
+                  children: [
+                    Icon(Icons.date_range, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Sắp xếp theo ngày'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'sort_priority',
+                child: Row(
+                  children: [
+                    Icon(Icons.priority_high, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Sắp xếp theo ưu tiên'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'logout',
                 child: Row(
@@ -257,11 +352,37 @@ class _NoteListScreenState extends State<NoteListScreen> with TickerProviderStat
                   ),
                 );
               } else {
+                // Lọc ghi chú
                 final notes = snapshot.data!.where((note) {
-                  if (_searchQuery.isEmpty) return true;
-                  return note.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                      note.content.toLowerCase().contains(_searchQuery.toLowerCase());
+                  bool matchesSearch = true;
+                  bool matchesPriority = true;
+                  bool matchesTag = true;
+
+                  // Lọc theo từ khóa tìm kiếm (tiêu đề, nội dung)
+                  if (_searchQuery.isNotEmpty) {
+                    matchesSearch = note.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                        note.content.toLowerCase().contains(_searchQuery.toLowerCase());
+                  }
+
+                  // Lọc theo ưu tiên
+                  if (_priorityFilter != null) {
+                    matchesPriority = note.priority == _priorityFilter;
+                  }
+
+                  // Lọc theo nhãn
+                  if (_tagFilter.isNotEmpty) {
+                    matchesTag = note.tags?.any((tag) => tag.toLowerCase().contains(_tagFilter.toLowerCase())) ?? false;
+                  }
+
+                  return matchesSearch && matchesPriority && matchesTag;
                 }).toList();
+
+                // Sắp xếp ghi chú
+                if (_sortOption == 'date') {
+                  notes.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Mới nhất trước
+                } else if (_sortOption == 'priority') {
+                  notes.sort((a, b) => b.priority.compareTo(a.priority)); // Ưu tiên cao trước
+                }
 
                 if (notes.isEmpty) {
                   return Center(
