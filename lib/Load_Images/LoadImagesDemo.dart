@@ -7,7 +7,7 @@ class LoadImagesDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Load IMAGE demo'),
+        title: const Text('Load Image demo'),
         backgroundColor: Colors.blue[900],
       ),
       body: Center(

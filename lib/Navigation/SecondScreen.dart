@@ -29,7 +29,7 @@ class SecondScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'You are on the Second Screen',
+                  'The Second Screen',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,

@@ -30,14 +30,7 @@ class FirstScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Welcome to Navigation Demo',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
-                  ),
-                ),
+
                 const SizedBox(height: 8),
                 const Text(
                   'Choose an option below to navigate',

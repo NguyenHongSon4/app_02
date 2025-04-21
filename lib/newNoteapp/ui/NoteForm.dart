@@ -602,13 +602,15 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _showImagePickerDialog(context),
-                                    icon: const Icon(Icons.image),
-                                    label: const Text('Thêm ảnh'),
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  Center(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _showImagePickerDialog(context),
+                                      icon: const Icon(Icons.image),
+                                      label: const Text('Thêm ảnh'),
+                                      style: ElevatedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                      ),
                                     ),
                                   ),
                                   if (_imageFile != null) ...[
@@ -641,13 +643,16 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                                         ),
                                       ),
                                     ),
-                                    TextButton.icon(
-                                      onPressed: () => setState(() {
-                                        _imageFile = null;
-                                        _imagePath = null;
-                                      }),
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      label: const Text('Xóa ảnh', style: TextStyle(color: Colors.red)),
+                                    const SizedBox(height: 8),
+                                    Center(
+                                      child: TextButton.icon(
+                                        onPressed: () => setState(() {
+                                          _imageFile = null;
+                                          _imagePath = null;
+                                        }),
+                                        icon: const Icon(Icons.delete, color: Colors.red),
+                                        label: const Text('Xóa ảnh', style: TextStyle(color: Colors.red)),
+                                      ),
                                     ),
                                   ],
                                 ],
@@ -658,75 +663,77 @@ class _NoteFormScreenState extends State<NoteFormScreen> with TickerProviderStat
                       ),
                       const SizedBox(height: 24),
                       // Nút lưu
-                      ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            _scaleController.forward().then((_) => _scaleController.reverse());
-                            if (_formKey.currentState!.validate()) {
-                              _formKey.currentState!.save();
-                              try {
-                                String? validatedColor = _color;
-                                if (validatedColor != null && validatedColor.length != 6) {
-                                  validatedColor = null;
-                                }
-                                if (_imagePath != null && !await File(_imagePath!).exists()) {
-                                  _imagePath = null;
-                                }
+                      Center(
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              _scaleController.forward().then((_) => _scaleController.reverse());
+                              if (_formKey.currentState!.validate()) {
+                                _formKey.currentState!.save();
+                                try {
+                                  String? validatedColor = _color;
+                                  if (validatedColor != null && validatedColor.length != 6) {
+                                    validatedColor = null;
+                                  }
+                                  if (_imagePath != null && !await File(_imagePath!).exists()) {
+                                    _imagePath = null;
+                                  }
 
-                                final now = DateTime.now();
-                                final note = Note(
-                                  id: widget.note?.id,
-                                  title: _title,
-                                  content: _content,
-                                  priority: _priority,
-                                  userId: _userId,
-                                  createdAt: widget.note?.createdAt ?? now,
-                                  modifiedAt: now,
-                                  tags: _tags.isNotEmpty ? _tags : null,
-                                  color: validatedColor,
-                                  imagePath: _imagePath,
-                                );
+                                  final now = DateTime.now();
+                                  final note = Note(
+                                    id: widget.note?.id,
+                                    title: _title,
+                                    content: _content,
+                                    priority: _priority,
+                                    userId: _userId,
+                                    createdAt: widget.note?.createdAt ?? now,
+                                    modifiedAt: now,
+                                    tags: _tags.isNotEmpty ? _tags : null,
+                                    color: validatedColor,
+                                    imagePath: _imagePath,
+                                  );
 
-                                if (widget.note == null) {
-                                  await NoteDatabaseHelper.instance.insertNote(note);
+                                  if (widget.note == null) {
+                                    await NoteDatabaseHelper.instance.insertNote(note);
+                                    _scaffoldMessengerKey.currentState?.showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Đã thêm ghi chú'),
+                                        backgroundColor: Colors.green,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  } else {
+                                    await NoteDatabaseHelper.instance.updateNote(note);
+                                    _scaffoldMessengerKey.currentState?.showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Đã sửa ghi chú'),
+                                        backgroundColor: Colors.green,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                  Navigator.pop(context, true);
+                                } catch (e) {
                                   _scaffoldMessengerKey.currentState?.showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Đã thêm ghi chú'),
-                                      backgroundColor: Colors.green,
+                                    SnackBar(
+                                      content: Text('Lỗi khi lưu ghi chú: $e'),
+                                      backgroundColor: Colors.red,
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
-                                } else {
-                                  await NoteDatabaseHelper.instance.updateNote(note);
-                                  _scaffoldMessengerKey.currentState?.showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Đã sửa ghi chú'),
-                                      backgroundColor: Colors.green,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
                                 }
-                                Navigator.pop(context, true);
-                              } catch (e) {
-                                _scaffoldMessengerKey.currentState?.showSnackBar(
-                                  SnackBar(
-                                    content: Text('Lỗi khi lưu ghi chú: $e'),
-                                    backgroundColor: Colors.red,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
                               }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                            elevation: 4,
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                              elevation: 4,
+                            ),
+                            child: const Text('Lưu', style: TextStyle(fontSize: 16)),
                           ),
-                          child: const Text('Lưu', style: TextStyle(fontSize: 16)),
                         ),
                       ),
                       const SizedBox(height: 16),
